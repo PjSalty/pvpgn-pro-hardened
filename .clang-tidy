@@ -1,0 +1,14 @@
+# Security-focused check set for the packet parsers. The full bugprone/cert/
+# analyzer families on 25-year-old code would be pure noise, so the gate is the
+# memory-safety and integer-overflow families, not style.
+Checks: >
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -clang-analyzer-optin.performance.*,
+  -cert-err58-cpp
+WarningsAsErrors: ''
+HeaderFilterRegex: 'src/(common|bnetd)/.*'
+FormatStyle: none

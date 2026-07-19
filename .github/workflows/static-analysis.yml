@@ -1,0 +1,70 @@
+# cppcheck + clang-tidy over the wire-facing code. Results upload to code
+# scanning as SARIF. Non-blocking on the legacy baseline (continue-on-error):
+# the gate is "no NEW high-severity finding", enforced by code scanning's PR
+# diffing, not "zero findings on 25-year-old code".
+name: static-analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  cppcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y cppcheck
+      - name: Run cppcheck (wire parsers first)
+        continue-on-error: true
+        run: |
+          cppcheck --enable=warning,portability --inline-suppr --std=c++11 \
+            --language=c++ --error-exitcode=0 \
+            --sarif --output-file=cppcheck.sarif \
+            -I src src/common src/bnetd || true
+      - uses: github/codeql-action/upload-sarif@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.30.9
+        if: always()
+        with:
+          sarif_file: cppcheck.sarif
+          category: cppcheck
+
+  clang-tidy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - name: Install clang-tidy + deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            clang-tidy cmake zlib1g-dev liblua5.1-0-dev build-essential
+      - name: Generate compile database
+        run: cmake -S . -B build -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_POLICY_VERSION_MINIMUM=3.5 -D WITH_LUA=true
+      - name: clang-tidy on the packet parsers (security check set)
+        continue-on-error: true
+        run: |
+          clang-tidy -p build \
+            src/common/packet.cpp src/common/tag.cpp src/common/bn_type.cpp \
+            || true

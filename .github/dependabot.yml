@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # bumps SHA-pinned `uses:` refs via the trailing `# vX.Y.Z` comment - keep it.
+  # note: Dependabot ALERTS do not fire for SHA-pinned actions; the update PRs do.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        update-types: [minor, patch]
+
+  # the pinned debian base digest and any Dockerfile deps.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      docker:
+        update-types: [minor, patch]

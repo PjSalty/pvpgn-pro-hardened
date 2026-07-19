@@ -1,0 +1,78 @@
+# Build the hardened daemon, prove the mitigations landed, run the unit tests,
+# the behavior-preservation oracle, and the fuzz regression corpus.
+# Third-party actions are pinned to full commit SHAs (Dependabot bumps the SHA
+# and the trailing version comment together - keep the comment).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0            # difftest needs the upstream-base branch
+          persist-credentials: false
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential cmake zlib1g-dev liblua5.1-0-dev \
+            checksec binutils file
+
+      - name: Configure + build (hardening ON)
+        run: |
+          cmake -S . -B build \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -D WITH_LUA=true
+          cmake --build build -j "$(nproc)"
+
+      - name: Mitigation gate (checksec)
+        run: bash test/checksec.sh build/src/bnetd/bnetd
+
+      - name: Upstream unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Behavior-preservation oracle (fixed == pristine on valid input)
+        run: ROOT="$PWD" GITREPO="$PWD" BUILD="$PWD/.dt-cmake" bash test/run-difftest.sh
+
+  fuzz-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install clang + libFuzzer + cmake
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            clang cmake make zlib1g-dev liblua5.1-0-dev
+          # ensure the compiler-rt fuzzer/asan runtime is present
+          sudo apt-get install --no-install-recommends -y "libclang-rt-$(clang --version | grep -oP 'version \K[0-9]+')-dev" || true
+
+      - name: Build + run fuzz regression (seeds + short campaign)
+        env:
+          FUZZ_SECONDS: "45"
+        run: bash fuzz/run-regression.sh

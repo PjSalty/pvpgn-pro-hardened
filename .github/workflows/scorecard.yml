@@ -1,0 +1,36 @@
+# OpenSSF Scorecard - tracks supply-chain posture (branch protection, pinned
+# actions, token permissions, signed releases) and publishes the score.
+name: scorecard
+
+on:
+  branch_protection_rule:
+  schedule:
+    - cron: "18 5 * * 2"
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write   # upload SARIF to code scanning
+      id-token: write          # publish_results (scorecard-action v2)
+    steps:
+      - uses: step-security/harden-runner@f808768d1510423e83855289c910610ca9b43176 # v2.17.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+      - uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+      - uses: github/codeql-action/upload-sarif@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.30.9
+        with:
+          sarif_file: results.sarif
