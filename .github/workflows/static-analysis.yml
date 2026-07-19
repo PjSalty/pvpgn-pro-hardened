@@ -36,9 +36,14 @@ jobs:
 
       - name: cppcheck (wire parsers)
         continue-on-error: true
+        # scoped to the byte-level parsers in the threat model: the whole of
+        # src/bnetd (handle_wol/handle_bnet are 60-230k lines) is too slow to be
+        # a useful gate, and CodeQL already covers the full tree.
         run: |
           cppcheck --enable=warning,portability --inline-suppr --std=c++11 \
-            --language=c++ -I src src/common src/bnetd 2>&1 | tee cppcheck.txt
+            --language=c++ -j"$(nproc)" -I src \
+            src/common/packet.cpp src/common/tag.cpp src/common/bn_type.cpp \
+            src/bnetd/handle_init.cpp 2>&1 | tee cppcheck.txt
 
       - name: clang-tidy (packet parsers, security checks)
         continue-on-error: true
