@@ -1394,9 +1394,13 @@ namespace pvpgn
 			return NULL;
 		}
 
-		for (pos = offset; packet->u.data[pos] != '\0'; pos++)
-		if (pos >= size || pos - offset > maxlen)
-			return NULL;
+		/* scan for the terminator, but never read past the declared size:
+		   the bound must be tested in the loop condition, before data[pos] is
+		   dereferenced, or a full-size packet with no NUL walks one byte past
+		   u.data[MAX_PACKET_SIZE]. */
+		for (pos = offset; pos < size && packet->u.data[pos] != '\0'; pos++)
+			if (pos - offset > maxlen)
+				return NULL;
 		if (pos >= size || pos - offset > maxlen) /* NUL must be inside too */
 			return NULL;
 		return packet->u.data + offset;
@@ -1418,7 +1422,9 @@ namespace pvpgn
 			return NULL;
 		}
 		size = (unsigned int)packet_get_size(packet);
-		if (offset + len>size)
+		/* overflow-safe form of "offset + len > size": the naive sum wraps for a
+		   large offset and lets an out-of-bounds window slip past the check. */
+		if (len > size || offset > size - len)
 		{
 			eventlog(eventlog_level_error, __FUNCTION__, "got bad offset {} and length {} for packet size {}", offset, len, size);
 			return NULL;

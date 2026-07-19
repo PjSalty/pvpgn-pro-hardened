@@ -117,7 +117,7 @@ namespace pvpgn
 	extern t_tag tag_case_str_to_uint(char const * tag_str)
 	{
 		unsigned int i, len;
-		char temp_str[5];
+		char temp_str[5] = { 0 }; /* zero-fill: a <4 char tag must not leave temp_str[len..3] uninitialised */
 
 		len = std::strlen(tag_str);
 		if (len != 4)
@@ -140,10 +140,14 @@ namespace pvpgn
 			return 0; /* unknown */
 		}
 
-		tag_uint = tag_str[0] << 24;
-		tag_uint |= tag_str[1] << 16;
-		tag_uint |= tag_str[2] << 8;
-		tag_uint |= tag_str[3];
+		/* read up to 4 bytes, stopping at a NUL terminator so a short string is
+		   never read past its end. valid 4-char tags carry no interior NUL, so
+		   this yields the same value for every real client/arch/game tag. the
+		   unsigned-char cast also avoids the signed-char left-shift UB the old
+		   form had on bytes >= 0x80. */
+		tag_uint = 0;
+		for (unsigned int i = 0; i < 4 && tag_str[i] != '\0'; i++)
+			tag_uint |= (t_tag)(unsigned char)tag_str[i] << (24 - 8 * i);
 
 		return tag_uint;
 	}

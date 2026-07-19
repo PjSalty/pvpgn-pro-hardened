@@ -8,3 +8,10 @@
 /lua5.1
 /.vs
 /CMakeSettings.json
+
+# pvpgn-pro-hardened build/test artifacts
+/build/
+.fuzz-cmake/
+.dt-cmake/
+fuzz/out/
+*.o
