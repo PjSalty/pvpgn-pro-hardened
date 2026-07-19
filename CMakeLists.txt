@@ -29,6 +29,10 @@ option(WITH_ODBC "include ODBC user accounts support" OFF)
 
 include(ConfigureChecks.cmake)
 
+# Security hardening (OpenSSF compiler-options guide). Gated by PVPGN_HARDENING
+# (default ON). Applies to every target added below; verify with test/checksec.sh.
+include(Hardening)
+
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	# using Clang
@@ -76,6 +80,11 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
 endif()
 
+# enable_testing() must run before add_subdirectory(src): src/CMakeLists.txt gates
+# add_subdirectory(test) on CMAKE_TESTING_ENABLED, so calling it afterwards (as
+# upstream did) silently dropped the whole unit-test suite from the build.
+enable_testing()
+
 add_subdirectory(conf)
 add_subdirectory(files)
 add_subdirectory(lib/fmt)
@@ -84,8 +93,6 @@ add_subdirectory(src)
 if(WITH_LUA)
     add_subdirectory(lua)
 endif(WITH_LUA)
-
-enable_testing()
 
 # uninstall target
 configure_file(
