@@ -1,0 +1,9 @@
+.git
+.github
+.fuzz-cmake
+fuzz/out
+build
+*.o
+*.a
+*.log
+.worktrees

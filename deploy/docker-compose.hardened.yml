@@ -1,0 +1,40 @@
+# Reference runtime sandbox for pvpgn-pro-hardened.
+#
+# The build hardening turns memory bugs into crashes; this layer contains the
+# process so a crash (or a hypothetical bypass) stays contained. Every control
+# here preserves the drop-in contract: same ports, same config, same behaviour.
+#
+#   docker compose -f deploy/docker-compose.hardened.yml up
+services:
+  pvpgn:
+    image: ghcr.io/pjsalty/pvpgn-pro-hardened:latest
+    # or build locally:  build: { context: .. , dockerfile: Dockerfile }
+    restart: unless-stopped
+    ports:
+      - "6112:6112/tcp"   # bnet client
+      - "6200:6200/tcp"   # w3route game-session relay
+
+    # --- containment ---------------------------------------------------------
+    user: "1000:1000"
+    read_only: true                     # immutable rootfs
+    cap_drop: [ALL]                     # bnetd needs no capabilities
+    security_opt:
+      - no-new-privileges:true         # block setuid/privilege escalation
+      - seccomp:./seccomp-pvpgn.json    # syscall allowlist (see deploy/seccomp-pvpgn.json)
+    pids_limit: 256
+    mem_limit: 256m
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    volumes:
+      # only the account/clan/log state is writable, on a dedicated volume.
+      - pvpgn-data:/usr/local/pvpgn/var/pvpgn
+
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6112"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  pvpgn-data:
