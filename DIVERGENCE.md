@@ -20,6 +20,8 @@ offered upstream, and once merged they drop out of this list.
 | `src/common/packet.cpp` | `packet_get_data_const`: overflow-safe `offset + len` check. |
 | `src/common/tag.cpp` | `tag_str_to_uint`: stop at the NUL terminator, and drop the signed-char shift UB. |
 | `src/common/tag.cpp` | `tag_case_str_to_uint`: zero-initialise the scratch buffer. |
+| `src/bnetd/i18n.h` | `_localize`: hold the caller's `fmt::string_view` instead of `fmt::to_string(...).c_str()`, whose temporary died at the end of the statement and left `fmt::format` parsing freed heap memory on every localized message. |
+| `src/bnetd/handle_bnet.cpp` | `_client_motd_w3`: `"{}" + '\n'` was pointer arithmetic on a 3-byte literal (10 bytes past its start, 7 out of bounds), handing fmt an out-of-bounds format string. Now `"{}\n"`. |
 | `CMakeLists.txt` | move `enable_testing()` before `add_subdirectory(src)` so the unit tests actually build; include the hardening module. |
 
 Every source fix is proved to produce identical output to the pristine code for
