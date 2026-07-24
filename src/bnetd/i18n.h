@@ -90,13 +90,19 @@ namespace pvpgn
 			std::string output;
 			try
 			{
-				t_gamelang lang;
-				const char *format = fmt::to_string(format_str).c_str();
-				if (lang = conn_get_gamelang_localized(c))
+				/* The format string has to stay alive until fmt::format below reads
+				   it. fmt::to_string returns a temporary std::string, so .c_str()
+				   on it dangles as soon as the statement ends, and formatting then
+				   parses freed heap memory. Hold the caller's string_view instead,
+				   and only re-point it at a translation, which the translations map
+				   owns for the life of the process. */
+				fmt::string_view format = format_str;
+				if (t_gamelang lang = conn_get_gamelang_localized(c))
 				{
-					if (!(format = _find_string(fmt::to_string(format_str).c_str(), lang)))
+					/* the temporary is fine here: it lives until _find_string returns */
+					if (const char *translated = _find_string(fmt::to_string(format_str).c_str(), lang))
 					{
-						format = fmt::to_string(format_str).c_str(); // if not found use original
+						format = translated; // else keep the original
 					}
 				}
 

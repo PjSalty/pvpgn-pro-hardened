@@ -2932,7 +2932,11 @@ namespace pvpgn
 					while (char* buff = file_get_line(fp))
 					{
 						char* line = message_format_line(c, buff);
-						fmt::format_to(serverinfo, "{}" + '\n', (line + 1));
+						/* "{}" + '\n' is pointer arithmetic on a 3-byte literal, not
+						   concatenation: it walks 10 bytes past the start and hands
+						   fmt an out-of-bounds format string. The newline belongs
+						   inside the literal. */
+						fmt::format_to(serverinfo, "{}\n", (line + 1));
 						xfree((void*)line);
 					}
 

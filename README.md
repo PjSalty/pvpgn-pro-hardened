@@ -69,6 +69,21 @@ proved not to change behaviour for valid traffic (see Testing below).
 
 Details in [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md).
 
+## Bugs found and fixed by review
+
+Two memory-safety bugs upstream introduced when it moved logging and i18n onto
+the fmt library. Both are on hot paths, and neither crashes, so both fail
+silently. Guarded now by `src/test/regression_fmt_lifetime.cc`, which aborts
+under AddressSanitizer if either idiom comes back.
+
+- `_localize` (`src/bnetd/i18n.h`) took `fmt::to_string(format_str).c_str()` as
+  its format string. That temporary dies at the end of the statement, so
+  formatting parsed freed heap memory, corrupting every localized message and
+  leaking freed bytes to the client. It reaches every chat-command reply.
+- `_client_motd_w3` (`src/bnetd/handle_bnet.cpp`) wrote `"{}" + '\n'`, which is
+  pointer arithmetic on a 3-byte literal, not concatenation: fmt received a
+  format pointer 7 bytes out of bounds and parsed whatever followed in `.rodata`.
+
 ## Run it
 
 Container (recommended):
