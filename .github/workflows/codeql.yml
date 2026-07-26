@@ -47,6 +47,6 @@ jobs:
           cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D CMAKE_POLICY_VERSION_MINIMUM=3.5 -D WITH_LUA=true
           cmake --build build -j "$(nproc)"
 
-      - uses: github/codeql-action/analyze@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.30.9
+      - uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           category: "/language:c-cpp"
