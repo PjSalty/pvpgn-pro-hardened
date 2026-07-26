@@ -37,7 +37,7 @@ jobs:
           sudo apt-get install --no-install-recommends -y \
             build-essential cmake zlib1g-dev liblua5.1-0-dev
 
-      - uses: github/codeql-action/init@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.30.9
+      - uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4.37.3
         with:
           languages: c-cpp
           queries: security-and-quality
