@@ -77,3 +77,6 @@ jobs:
         env:
           FUZZ_SECONDS: "45"
         run: bash fuzz/run-regression.sh
+
+      - name: Packet handler regressions (ASan + UBSan)
+        run: bash test/run-handler-regression.sh

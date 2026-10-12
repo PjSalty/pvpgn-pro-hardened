@@ -34,15 +34,17 @@ build_variant() { # $1=srcdir $2=out [extraflags...]
 # fixed = working tree; pristine = upstream-base checkout into $WORK/pristine.
 # GITREPO holds the .git (may differ from ROOT when ROOT is a git-less copy).
 GITREPO="${GITREPO:-$ROOT}"
-git config --global --add safe.directory "$GITREPO" 2>/dev/null || true
+# mark the repo safe for this invocation only, instead of writing the global
+# git config: CI checks out as a different owner than the job user.
+GIT=(git -c "safe.directory=$GITREPO")
 mkdir -p "$WORK/pristine"
 # resolve the pristine base ref: a local branch on a dev box, origin/... in CI
 # where checkout only leaves remote-tracking refs.
 BASE_REF="${BASE_REF:-upstream-base}"
-if ! git -C "$GITREPO" rev-parse --verify --quiet "$BASE_REF^{commit}" >/dev/null; then
+if ! "${GIT[@]}" -C "$GITREPO" rev-parse --verify --quiet "$BASE_REF^{commit}" >/dev/null; then
 	BASE_REF="origin/${BASE_REF#origin/}"
 fi
-git -C "$GITREPO" archive "$BASE_REF" | tar -x -C "$WORK/pristine"
+"${GIT[@]}" -C "$GITREPO" archive "$BASE_REF" | tar -x -C "$WORK/pristine"
 
 echo "== building fixed (working tree) =="
 build_variant "$ROOT" "$WORK/oracle_fixed"
