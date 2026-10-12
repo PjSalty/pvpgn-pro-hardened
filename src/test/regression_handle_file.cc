@@ -32,6 +32,7 @@ using namespace pvpgn;
 using namespace pvpgn::bnetd;
 
 static int sock = -1;
+static int queued;
 static int sends;
 static bool terminated;
 static std::string sent;
@@ -43,7 +44,9 @@ namespace pvpgn
 		t_conn_state conn_get_state(t_connection const *) { return conn_state_pending_raw; }
 		void conn_set_state(t_connection *, t_conn_state) {}
 		int conn_get_socket(t_connection const *) { return sock; }
-		int conn_push_outqueue(t_connection *, t_packet *) { return 0; }
+		// counted, not empty: a static analyzer that sees an empty stub reports the
+		// handler's real call to this function as an expression with no effect
+		int conn_push_outqueue(t_connection *, t_packet *) { queued++; return 0; }
 
 		int file_send(t_connection *, char const * rawname, unsigned int, unsigned int, unsigned int, int)
 		{
@@ -81,6 +84,10 @@ static int request(const std::string &data, bool close_sender) {
 		close(sv[1]);
 
 	t_packet *packet = packet_create(packet_class_raw);
+	if (!packet) {
+		std::printf("HANDLE FILE REGRESSION: FAIL (no packet)\n");
+		std::exit(1);
+	}
 	packet_set_size(packet, sizeof(t_client_file_req3));
 	sock = sv[0];
 	sends = 0;
@@ -120,6 +127,9 @@ int main() {
 
 	ret = request("", false);
 	check("a read error is rejected without calling file_send", ret == -1 && sends == 0);
+
+	// the reply is file_send()'s to queue, never the raw-mode read's
+	check("the raw-mode read queued nothing itself", queued == 0);
 
 	if (failures) {
 		std::printf("HANDLE FILE REGRESSION: FAIL (%d)\n", failures);

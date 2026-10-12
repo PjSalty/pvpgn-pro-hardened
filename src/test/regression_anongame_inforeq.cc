@@ -39,6 +39,10 @@ static bool handler_can_read(t_packet const *packet, unsigned int i) {
 int main() {
 	int failures = 0;
 	t_packet *packet = packet_create(packet_class_bnet);
+	if (!packet) {
+		std::printf("ANONGAME INFOREQ REGRESSION: FAIL (no packet)\n");
+		return 1;
+	}
 
 	for (unsigned int noitems = 0; noitems <= 255; noitems++) {
 		for (unsigned int size = sizeof(t_bnet_header); size <= 10 + noitems * 8 + 8; size++) {
