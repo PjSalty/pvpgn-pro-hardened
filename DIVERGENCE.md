@@ -28,6 +28,8 @@ offered upstream, and once merged they drop out of this list.
 | `src/bnetd/anongame_gameresult.cpp` | `anongame_gameresult_parse`: check the client's `heroes_used_count` against the bytes left in the packet, by division so it cannot wrap, before it sizes the hero allocation, and free the result on that reject path. A negative count used to reach `xmalloc` first and abort the daemon; a count past the end of the packet leaked three allocations. |
 | `src/bnetd/anongame.cpp` | `anongame_evaluate_results`: skip a result entry that is not about a player of the game. Its player number is a client byte and indexed the 12-entry `wins`/`losses` tables on the stack unchecked. `gameresult_get_player_number` (`anongame_gameresult.cpp`) now returns -1 for a number outside 1 to `ANONGAME_MAX_GAMECOUNT`. |
 | `src/bnetd/file.cpp` | `file_send`: release the reply packet when the file lookup throws. A request for a missing file, or a name with a path separator, leaked one packet. |
+| `src/bnetd/command.cpp` | `_handle_set_command`: format the result message with `std::snprintf`. The `/set` key and value could make it exceed `msgtemp0` (255 bytes). |
+| `src/bnetd/irc.cpp` | emote formatting: `std::snprintf` into `temp`. The length guard omitted the leading `:`, so a 502-char emote wrote one byte past `temp` (512 bytes). |
 | `CMakeLists.txt` | move `enable_testing()` before `add_subdirectory(src)` so the unit tests actually build; include the hardening module. |
 
 The parser fixes are proved to produce identical output to the pristine code for

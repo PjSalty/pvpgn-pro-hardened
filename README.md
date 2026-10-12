@@ -104,6 +104,9 @@ Bugs in the packet handlers, each with a `regression_*` test in `src/test/`:
 - `packet_create` (`src/common/packet.cpp`) left the packet buffer uninitialised,
   so a handler reading a field past the end of a short packet echoed old heap
   bytes to the client.
+- `_handle_set_command` (`src/bnetd/command.cpp`) and the IRC emote path
+  (`src/bnetd/irc.cpp`) formatted client-controlled text with `sprintf` into
+  fixed buffers they could exceed; both now use `snprintf`.
 
 ## Run it
 
