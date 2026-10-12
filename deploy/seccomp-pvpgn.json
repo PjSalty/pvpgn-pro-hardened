@@ -1,5 +1,5 @@
 {
-  "//": "Seccomp allowlist for bnetd. defaultAction denies with EPERM. This is a static, single-process network daemon: it needs sockets, epoll/poll/select, file I/O for the account DB and config, memory, signals, and time. It needs none of the process-escape syscalls (ptrace, keyctl, mount, bpf, kexec, add_key, unshare, clone of new namespaces), which are denied by omission. Verified by booting the daemon and serving a bnet handshake under this profile; widen only if a legitimate syscall is denied.",
+  "//": "Seccomp allowlist for bnetd. defaultAction denies with EPERM. This is a static, single-process network daemon: it needs sockets, epoll/poll/select, file I/O for the account DB and config, memory, signals, time, and its interval timer (setitimer drives every in-game timer: keepalives, latency checks, delayed disconnects). It needs none of the process-escape syscalls (ptrace, keyctl, mount, bpf, kexec, add_key, unshare, clone of new namespaces) and never changes user or group id as a non-root container, so those are denied by omission. Verified by test/smoke-test.sh under this profile, which fails on any fatal line in the daemon's log; widen only if a legitimate syscall is denied.",
   "defaultAction": "SCMP_ACT_ERRNO",
   "defaultErrnoRet": 1,
   "archMap": [
@@ -13,8 +13,6 @@
         "getsockname", "getpeername", "getsockopt", "setsockopt", "shutdown",
         "recvfrom", "recvmsg", "sendto", "sendmsg", "recv", "send",
         "execve", "execveat",
-        "setuid", "setgid", "setgroups", "setresuid", "setresgid",
-        "setuid32", "setgid32", "setgroups32", "setresuid32", "setresgid32",
         "read", "readv", "pread64", "write", "writev", "pwrite64",
         "open", "openat", "openat2", "close", "close_range", "creat",
         "stat", "fstat", "lstat", "newfstatat", "statx", "fstatfs", "statfs",
@@ -30,6 +28,7 @@
         "rt_sigaction", "rt_sigprocmask", "rt_sigreturn", "rt_sigpending", "rt_sigsuspend",
         "sigaltstack", "kill", "tgkill", "tkill", "signalfd", "signalfd4", "restart_syscall",
         "nanosleep", "clock_nanosleep", "clock_gettime", "clock_getres", "gettimeofday", "time",
+        "setitimer", "getitimer", "alarm",
         "getpid", "gettid", "getppid", "getuid", "geteuid", "getgid", "getegid",
         "getgroups", "getresuid", "getresgid", "getpgrp", "getpgid", "getsid",
         "setrlimit", "getrlimit", "prlimit64", "getpriority", "sched_getaffinity", "sched_yield",
