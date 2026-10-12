@@ -20,7 +20,7 @@ fi
 CFG="$(dirname "$(find "$BUILD" -name config.h | head -1)")"
 INC=(-Isrc -I"$CFG" -Ilib)
 COMMON=(common/packet.cpp common/bn_type.cpp common/tag.cpp common/xalloc.cpp
-        common/eventlog.cpp common/hexdump.cpp)
+        common/eventlog.cpp common/hexdump.cpp bnetd/anongame_gameresult.cpp)
 
 build_variant() { # $1=srcdir $2=out [extraflags...]
 	local sd="$1" out="$2"; shift 2

@@ -24,6 +24,7 @@ offered upstream, and once merged they drop out of this list.
 | `src/bnetd/handle_bnet.cpp` | `_client_motd_w3`: `"{}" + '\n'` was pointer arithmetic on a 3-byte literal (10 bytes past its start, 7 out of bounds), handing fmt an out-of-bounds format string. Now `"{}\n"`. |
 | `src/bnetd/handle_anongame.cpp` | `_client_anongame_infos`: reject an info request shorter than its header plus the `noitems` entries it announces (`anongame_inforeq_size` in `handle_anongame.h`). `noitems` is a client byte, and the unchecked `packet_get_data_const` result, NULL past the end of the packet, went straight into `memcpy`. |
 | `src/bnetd/handle_file.cpp` | raw-mode filename read: read one byte less than the buffer so the name handed to `file_send` stays NUL terminated, and reject the request when the read returns nothing or fails instead of calling `file_send` anyway. |
+| `src/bnetd/anongame_gameresult.cpp` | `anongame_gameresult_parse`: check the client's `heroes_used_count` against the bytes left in the packet, by division so it cannot wrap, before it sizes the hero allocation, and free the result on that reject path. A negative count used to reach `xmalloc` first and abort the daemon; a count past the end of the packet leaked three allocations. |
 | `CMakeLists.txt` | move `enable_testing()` before `add_subdirectory(src)` so the unit tests actually build; include the hardening module. |
 
 The parser fixes are proved to produce identical output to the pristine code for
@@ -58,7 +59,8 @@ branch against the new upstream and not the old one. Merge the pull request by
 rebase, which keeps each upstream commit under its own author. Update the base
 commit at the top of this file in the same pull request.
 
-If a sync touches `src/common/packet.cpp` or `src/common/tag.cpp`, re-run
-`test/run-difftest.sh` and `fuzz/run-regression.sh` before pushing. When an
-upstream release incorporates one of the fixes above, delete the now-redundant
-local change during the sync and update this file.
+If a sync touches `src/common/packet.cpp`, `src/common/tag.cpp` or
+`src/bnetd/anongame_gameresult.cpp`, re-run `test/run-difftest.sh` and
+`fuzz/run-regression.sh` before pushing. When an upstream release incorporates
+one of the fixes above, delete the now-redundant local change during the sync
+and update this file.

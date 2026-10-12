@@ -81,6 +81,16 @@ its result was ignored, so a failed read still ran `file_send`. Reachable before
 login. Fix: read one byte less than the buffer, and reject the request when the
 read returns nothing or fails.
 
+### 6. `anongame_gameresult_parse` allocation from an unchecked count
+
+A w3route game result carries `heroes_used_count`, a 32-bit int from the client,
+and that many hero records. The parser sized an `xmalloc` from the count before
+checking it against the packet: a negative count asked for nearly `SIZE_MAX`
+bytes and `xmalloc` aborted the daemon. The check that followed could wrap on a
+32-bit `size_t`, and when it rejected the packet it returned without freeing the
+result, the player table or the hero table. Fix: bound the count by the bytes
+left in the packet, by division, before allocating, and free on that path.
+
 ## What is not claimed
 
 The build hardening (`HARDENING.md`) is the primary defence for the rest of the
