@@ -33,8 +33,10 @@ def conn(port, payload, read=True):
     s.sendall(payload); got = b""
     if read:
         s.settimeout(2)
+        # the packet body is random, so the server may answer, stay quiet, or
+        # drop the connection. all three are fine: only the daemon dying is not.
         try: got = s.recv(256)
-        except socket.timeout: pass
+        except (socket.timeout, ConnectionError): pass
     s.close(); return got
 
 # 1) real bnet init byte (CLASS_BNET) + a SID_AUTH_INFO-shaped packet.
@@ -63,4 +65,14 @@ fi
 # re-check the port still serves (not just process alive).
 bash -c "exec 3<>/dev/tcp/127.0.0.1/${P6112}" 2>/dev/null && echo "  6112 still accepting connections" \
   || { echo "FAIL: 6112 stopped serving"; exit 1; }
+# a daemon can stay up and serve while part of it is dead: a syscall the sandbox
+# denies shows up as a fatal line in its log, not as an exit. the seccomp profile
+# shipped without setitimer for that reason, and this test passed. look in both
+# places the log can be (stdout, or the default log file). cat is run directly,
+# with no shell around it: sh needs vfork, which the profile does not allow.
+fatal="$( { docker logs "$NAME" 2>&1; docker exec "$NAME" cat /usr/local/pvpgn/var/pvpgn/bnetd.log 2>/dev/null; } | grep -F '[fatal]' || true )"
+if [ -n "$fatal" ]; then
+  echo "FAIL: the daemon logged a fatal error"; printf '%s\n' "$fatal" | head -5; exit 1
+fi
+echo "  no fatal lines in the daemon log"
 echo "SMOKE TEST: PASS"
