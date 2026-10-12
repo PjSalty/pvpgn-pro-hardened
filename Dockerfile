@@ -9,7 +9,7 @@
 #
 # Base pinned by digest for reproducibility. Refresh with:
 #   docker buildx imagetools inspect debian:13-slim
-ARG DEBIAN_DIGEST=sha256:020c0d20b9880058cbe785a9db107156c3c75c2ac944a6aa7ab59f2add76a7bd
+ARG DEBIAN_DIGEST=sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f
 
 # ---- build stage ----------------------------------------------------------
 FROM debian@${DEBIAN_DIGEST} AS build
