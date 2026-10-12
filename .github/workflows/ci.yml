@@ -54,6 +54,22 @@ jobs:
       - name: Behavior-preservation oracle (fixed == pristine on valid input)
         run: ROOT="$PWD" GITREPO="$PWD" BUILD="$PWD/.dt-cmake" bash test/run-difftest.sh
 
+      # The image and the sandbox it ships with are only as good as the last
+      # time one ran under the other: a syscall the profile denies leaves bnetd
+      # up and partly dead. The flags are the ones
+      # deploy/docker-compose.hardened.yml sets.
+      - name: Build the image
+        run: docker build -t pvpgn-pro-hardened:ci .
+
+      - name: Smoke test under the shipped sandbox
+        run: >-
+          bash test/smoke-test.sh pvpgn-pro-hardened:ci
+          --user 1000:1000 --read-only --cap-drop ALL
+          --security-opt no-new-privileges
+          --security-opt seccomp=deploy/seccomp-pvpgn.json
+          --pids-limit 256 --memory 256m
+          --tmpfs /tmp:size=16m,mode=1777
+
   fuzz-regression:
     runs-on: ubuntu-latest
     timeout-minutes: 20
