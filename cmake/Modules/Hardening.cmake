@@ -33,9 +33,6 @@ set(_hardening_flags
 	-fno-strict-aliasing            # legacy code punning safety
 	-fno-delete-null-pointer-checks # keep NULL checks the optimiser might drop
 	-fno-strict-overflow            # no UB-based signed-overflow assumptions
-	-Wformat
-	-Wformat=2
-	-Werror=format-security         # format-string sinks are build errors
 	-fPIE
 )
 
@@ -55,6 +52,18 @@ foreach(_flag IN LISTS _hardening_flags)
 		message(STATUS "pvpgn: compiler does not accept ${_flag}, skipping")
 	endif()
 endforeach()
+
+# format-string sinks are build errors. probed as one group: GCC rejects
+# -Werror=format-security unless -Wformat is already on, so probed alone it was
+# silently skipped by every GCC that does not default to -Wformat (Debian's).
+set(_format_flags -Wformat -Wformat=2 -Werror=format-security)
+string(REPLACE ";" " " _format_flags_str "${_format_flags}")
+check_cxx_compiler_flag("${_format_flags_str}" PVPGN_HAVE_FORMAT_SECURITY)
+if(PVPGN_HAVE_FORMAT_SECURITY)
+	add_compile_options(${_format_flags})
+else()
+	message(STATUS "pvpgn: compiler does not accept ${_format_flags_str}, skipping")
+endif()
 
 # --- preprocessor defines ----------------------------------------------------
 # _FORTIFY_SOURCE needs an optimising build; skip it in Debug where it warns.
