@@ -23,6 +23,7 @@ offered upstream, and once merged they drop out of this list.
 | `src/bnetd/i18n.h` | `_localize`: hold the caller's `fmt::string_view` instead of `fmt::to_string(...).c_str()`, whose temporary died at the end of the statement and left `fmt::format` parsing freed heap memory on every localized message. |
 | `src/bnetd/handle_bnet.cpp` | `_client_motd_w3`: `"{}" + '\n'` was pointer arithmetic on a 3-byte literal (10 bytes past its start, 7 out of bounds), handing fmt an out-of-bounds format string. Now `"{}\n"`. |
 | `src/bnetd/handle_anongame.cpp` | `_client_anongame_infos`: reject an info request shorter than its header plus the `noitems` entries it announces (`anongame_inforeq_size` in `handle_anongame.h`). `noitems` is a client byte, and the unchecked `packet_get_data_const` result, NULL past the end of the packet, went straight into `memcpy`. |
+| `src/bnetd/handle_file.cpp` | raw-mode filename read: read one byte less than the buffer so the name handed to `file_send` stays NUL terminated, and reject the request when the read returns nothing or fails instead of calling `file_send` anyway. |
 | `CMakeLists.txt` | move `enable_testing()` before `add_subdirectory(src)` so the unit tests actually build; include the hardening module. |
 
 The parser fixes are proved to produce identical output to the pristine code for

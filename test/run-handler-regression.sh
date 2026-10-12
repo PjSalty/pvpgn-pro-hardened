@@ -33,4 +33,5 @@ run() { # $1=test name, rest=the bnetd sources it drives
 }
 
 run regression_anongame_inforeq
+run regression_handle_file handle_file.cpp
 echo "HANDLER REGRESSION: PASS"

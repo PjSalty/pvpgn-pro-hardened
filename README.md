@@ -89,6 +89,9 @@ Bugs in the packet handlers, each with a `regression_*` test in `src/test/`:
 - `_client_anongame_infos` (`src/bnetd/handle_anongame.cpp`) trusted the item
   count byte of an anongame info request and passed a NULL accessor result to
   `memcpy`: one short packet from any logged-in client crashed the daemon.
+- The raw-mode file request (`src/bnetd/handle_file.cpp`) read the filename
+  off the socket into a buffer it could fill completely, so `file_send` got an
+  unterminated string from a stack buffer. Reachable before login.
 
 ## Run it
 
