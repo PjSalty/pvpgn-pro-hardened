@@ -1,7 +1,7 @@
 # Divergence from upstream
 
 This fork tracks [`pvpgn/pvpgn-server`](https://github.com/pvpgn/pvpgn-server).
-The base is upstream `master` at commit `fcdf00f` (2021-02-26), which is 102
+The base is upstream `master` at commit `9cd173f` (2026-08-08), which is 104
 commits past the last tagged release (`1.99.7.2.1`, 2018). The `upstream-base`
 branch pins that pristine base so the divergence is always diffable:
 
@@ -37,13 +37,23 @@ valid input by `test/run-difftest.sh`.
 
 ## Syncing new upstream
 
+`main` only takes pull requests and keeps a linear history, so new upstream
+commits are cherry-picked onto it, not merged:
+
 ```sh
-git fetch upstream
-git checkout upstream-base && git merge --ff-only upstream/master   # advance the base
-git checkout main && git merge upstream/master                      # bring fixes into main
+git fetch upstream && git fetch origin
+git switch -c sync/upstream origin/main
+git cherry-pick -x $(git rev-list --reverse --no-merges origin/upstream-base..upstream/master)
+git push origin upstream/master:upstream-base   # advance the base, fast-forward only
+git push -u origin sync/upstream                # then open a pull request
 ```
 
-If a merge touches `src/common/packet.cpp` or `src/common/tag.cpp`, re-run
+Advance the base before the pull request runs, so the difftest compares the
+branch against the new upstream and not the old one. Merge the pull request by
+rebase, which keeps each upstream commit under its own author. Update the base
+commit at the top of this file in the same pull request.
+
+If a sync touches `src/common/packet.cpp` or `src/common/tag.cpp`, re-run
 `test/run-difftest.sh` and `fuzz/run-regression.sh` before pushing. When an
 upstream release incorporates one of the fixes above, delete the now-redundant
-local change during the merge and update this file.
+local change during the sync and update this file.
