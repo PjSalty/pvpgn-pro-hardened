@@ -75,6 +75,7 @@ namespace pvpgn
 			gameresult = (t_anongame_gameresult*)xmalloc(sizeof(t_anongame_gameresult));
 
 			gameresult->players = (t_anongame_player*)xmalloc(sizeof(t_anongame_player)*result_count);
+			gameresult->heroes = NULL; /* gameresult_destroy() looks at it */
 
 			gameresult->number_of_results = result_count;
 
@@ -108,13 +109,17 @@ namespace pvpgn
 
 			if ((heroes_count))
 			{
-				gameresult->heroes = (t_anongame_hero*)xmalloc(sizeof(t_anongame_hero)*heroes_count);
-
-				if (packet_get_size(packet) < expectedsize + sizeof(t_client_w3route_gameresult_hero)*heroes_count)
+				/* heroes_count comes from the client and has to fit in what is
+				 * left of the packet before it sizes an allocation. dividing
+				 * the room, instead of multiplying the count, cannot wrap */
+				if (heroes_count < 0 || (unsigned int)heroes_count > (packet_get_size(packet) - expectedsize) / sizeof(t_client_w3route_gameresult_hero))
 				{
 					eventlog(eventlog_level_error, __FUNCTION__, "gameresult packet is smaller than expected");
+					gameresult_destroy(gameresult);
 					return NULL;
 				}
+
+				gameresult->heroes = (t_anongame_hero*)xmalloc(sizeof(t_anongame_hero)*heroes_count);
 
 				for (counter = 0; counter < heroes_count; counter++)
 				{

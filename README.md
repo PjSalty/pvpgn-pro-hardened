@@ -92,6 +92,10 @@ Bugs in the packet handlers, each with a `regression_*` test in `src/test/`:
 - The raw-mode file request (`src/bnetd/handle_file.cpp`) read the filename
   off the socket into a buffer it could fill completely, so `file_send` got an
   unterminated string from a stack buffer. Reachable before login.
+- `anongame_gameresult_parse` (`src/bnetd/anongame_gameresult.cpp`) sized an
+  allocation from the hero count in a w3route game result before checking it: a
+  negative count aborted the daemon, and a count past the end of the packet
+  leaked three allocations per packet.
 
 ## Run it
 
@@ -135,7 +139,7 @@ cosign verify \
 
 The changes are proved not to break the daemon:
 
-- `test/run-difftest.sh`: a differential oracle runs ~110k valid inputs through
+- `test/run-difftest.sh`: a differential oracle runs ~130k valid inputs through
   the patched parsers against the pristine upstream code and asserts identical
   output.
 - `test/build-and-verify.sh`: full build, checksec gate, and the upstream unit

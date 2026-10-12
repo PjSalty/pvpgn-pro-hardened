@@ -18,8 +18,11 @@
 
 #include "common/setup_before.h"
 #include "common/packet.h"
+#include "common/bn_type.h"
 #include "common/tag.h"
 #include "common/field_sizes.h"
+#define ANONGAME_GAMERESULT_INTERNAL_ACCESS
+#include "bnetd/anongame_gameresult.h"
 #include "common/setup_after.h"
 
 using namespace pvpgn;
@@ -125,9 +128,66 @@ static void test_packets() {
 	}
 }
 
+// ---- w3route game result parser: well-formed packets only -----------------
+// the hero count always matches the hero records present, or the packet is cut
+// short of its fixed parts (both builds refuse that before allocating). a hero
+// count the packet cannot hold is the out-of-contract case: pristine leaks or
+// aborts there, and src/test/regression_gameresult.cc covers it instead.
+static void test_gameresults() {
+	using namespace pvpgn::bnetd;
+	for (int i = 0; i < 20000; i++) {
+		unsigned players = (unsigned)(rnd() % 13);
+		unsigned heroes = (rnd() % 4) ? (unsigned)(rnd() % 13) : 0;
+		unsigned n = sizeof(t_client_w3route_gameresult) + players * sizeof(t_client_w3route_gameresult_player)
+		             + sizeof(t_client_w3route_gameresult_part2) + heroes * sizeof(t_client_w3route_gameresult_hero)
+		             + sizeof(t_client_w3route_gameresult_part3);
+
+		t_packet *p = (t_packet *)malloc(sizeof(*p));
+		std::memset(p, 0, sizeof(*p));
+		p->ref = 1; p->pclass = packet_class_w3route;
+		for (unsigned j = 0; j < n; j++) p->u.data[j] = (char)rnd(); // every field random
+		bn_byte_set(&p->u.client_w3route_gameresult.number_of_results, players);
+		t_client_w3route_gameresult_part2 *part2 = (t_client_w3route_gameresult_part2 *)
+			(p->u.data + sizeof(t_client_w3route_gameresult) + players * sizeof(t_client_w3route_gameresult_player));
+		bn_int_set(&part2->heroes_used_count, heroes);
+		if (rnd() % 8 == 0 && heroes == 0) n -= 1 + (unsigned)(rnd() % 60); // cut short: must be refused
+		packet_set_size(p, n);           // declared size == bytes present (framer invariant)
+
+		t_anongame_gameresult *r = anongame_gameresult_parse(p);
+		mix_u32(r ? 0x6A3Eu : 0u);
+		if (r) {
+			mix_u32((uint32_t)gameresult_get_number_of_results(r));
+			for (unsigned j = 0; j < players; j++) {
+				mix_u32((uint32_t)gameresult_get_player_number(r, (int)j));
+				mix_u32((uint32_t)gameresult_get_player_result(r, (int)j));
+				mix_u32((uint32_t)r->players[j].race);
+			}
+			mix_u32((uint32_t)r->unit_score); mix_u32((uint32_t)r->heroes_score);
+			mix_u32((uint32_t)r->resource_score); mix_u32((uint32_t)r->units_produced);
+			mix_u32((uint32_t)r->units_killed); mix_u32((uint32_t)r->buildings_produced);
+			mix_u32((uint32_t)r->buildings_razed); mix_u32((uint32_t)r->largest_army);
+			mix_u32((uint32_t)r->heroes_used_count);
+			mix_u32(r->heroes ? 1u : 0u);
+			for (unsigned j = 0; j < heroes; j++) {
+				mix_u32((uint32_t)r->heroes[j].level);
+				mix_u32((uint32_t)r->heroes[j].race_and_name);
+				mix_u32((uint32_t)r->heroes[j].hero_xp);
+			}
+			mix_u32((uint32_t)r->heroes_killed); mix_u32((uint32_t)r->items_obtained);
+			mix_u32((uint32_t)r->mercenaries_hired); mix_u32((uint32_t)r->total_hero_xp);
+			mix_u32((uint32_t)r->gold_mined); mix_u32((uint32_t)r->lumber_harvested);
+			mix_u32((uint32_t)r->resources_traded_given); mix_u32((uint32_t)r->resources_traded_taken);
+			mix_u32((uint32_t)r->tech_percentage); mix_u32((uint32_t)r->gold_lost_to_upkeep);
+			gameresult_destroy(r);
+		}
+		free(p);
+	}
+}
+
 int main() {
 	test_tags();
 	test_packets();
+	test_gameresults();
 	std::printf("DIFFTEST_DIGEST=%08x\n", digest);
 	return 0;
 }

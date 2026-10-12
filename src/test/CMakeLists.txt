@@ -28,3 +28,11 @@ if(UNIX)
 	target_link_libraries(regression_handle_file PRIVATE common fmt)
 	add_test(regression_handle_file regression_handle_file)
 endif()
+
+# Guards the hero block of the w3route game result parser: the client's hero
+# count has to be checked against the packet before it sizes an allocation, and
+# a rejected packet must not leak. Runs the real parser with xmalloc/xfree
+# defined by the test, so common's xalloc.cpp is deliberately not pulled in.
+add_executable(regression_gameresult regression_gameresult.cc ../bnetd/anongame_gameresult.cpp)
+target_link_libraries(regression_gameresult PRIVATE common fmt)
+add_test(regression_gameresult regression_gameresult)
