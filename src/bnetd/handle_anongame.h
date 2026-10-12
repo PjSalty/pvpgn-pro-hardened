@@ -17,6 +17,7 @@
 #define INCLUDED_HANDLE_ANONGAME_PROTOS
 
 #include "common/packet.h"
+#include "common/bn_type.h"
 #include "connection.h"
 
 namespace pvpgn
@@ -26,6 +27,13 @@ namespace pvpgn
 	{
 
 		extern int handle_anongame_packet(t_connection * c, t_packet const * const packet);
+
+		/* size a CLIENT_FINDANONGAME_INFOREQ must have to hold the noitems
+		 * <tag><unknown> pairs (two bn_int each) that its header announces */
+		static inline unsigned int anongame_inforeq_size(t_packet const * packet)
+		{
+			return sizeof(t_client_findanongame_inforeq) + bn_byte_get(packet->u.client_findanongame_inforeq.noitems) * 2 * sizeof(bn_int);
+		}
 
 	}
 

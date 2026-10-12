@@ -59,6 +59,19 @@ uninitialised scratch buffer into the decode. Fix: stop at the NUL terminator an
 zero-initialise the scratch (also removing a signed-char left-shift UB on bytes
 >= 0x80).
 
+## Findings from review
+
+Found by reading the handlers, which the fuzzers do not drive. Each was present
+in upstream and has a regression test in `src/test/`.
+
+### 4. `_client_anongame_infos` NULL dereference
+
+The anongame info request carries `noitems`, a client byte, and one 8-byte entry
+per item. The handler read the entries through `packet_get_data_const` without
+checking the packet held them, and passed the result, NULL past the end of the
+packet, to `memcpy`. Any logged-in client could crash the daemon with one short
+packet. Fix: reject a packet shorter than its header plus the announced entries.
+
 ## What is not claimed
 
 The build hardening (`HARDENING.md`) is the primary defence for the rest of the

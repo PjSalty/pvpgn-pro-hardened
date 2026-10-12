@@ -84,6 +84,12 @@ under AddressSanitizer if either idiom comes back.
   pointer arithmetic on a 3-byte literal, not concatenation: fmt received a
   format pointer 7 bytes out of bounds and parsed whatever followed in `.rodata`.
 
+Bugs in the packet handlers, each with a `regression_*` test in `src/test/`:
+
+- `_client_anongame_infos` (`src/bnetd/handle_anongame.cpp`) trusted the item
+  count byte of an anongame info request and passed a NULL accessor result to
+  `memcpy`: one short packet from any logged-in client crashed the daemon.
+
 ## Run it
 
 Container (recommended):

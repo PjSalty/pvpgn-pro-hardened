@@ -680,6 +680,12 @@ namespace pvpgn
 		{
 			t_packet * rpacket;
 
+			if (packet_get_size(packet) < sizeof(t_client_findanongame_inforeq))
+			{
+				eventlog(eventlog_level_error, __FUNCTION__, "[{}] got bad FINDANONGAME_INFOREQ packet (expected {} bytes, got {})", conn_get_socket(c), sizeof(t_client_findanongame_inforeq), packet_get_size(packet));
+				return -1;
+			}
+
 			if (bn_int_get(packet->u.client_findanongame_inforeq.count) > 1) {
 				/* reply with 0 entries found */
 				int	temp = 0;
@@ -715,6 +721,14 @@ namespace pvpgn
 				char langstr[5];
 				t_gamelang gamelang = conn_get_gamelang(c);
 				bn_int_tag_get((bn_int const *)&gamelang, langstr, 5);
+
+				/* noitems is a client byte: the items it announces have to be in
+				 * the packet, packet_get_data_const() returns NULL past its end */
+				if (packet_get_size(packet) < anongame_inforeq_size(packet))
+				{
+					eventlog(eventlog_level_error, __FUNCTION__, "[{}] got bad FINDANONGAME_INFOREQ packet (expected {} bytes, got {})", conn_get_socket(c), anongame_inforeq_size(packet), packet_get_size(packet));
+					return -1;
+				}
 
 				/* Send seperate packet for each item requested
 				 * sending all at once overloaded w3xp
