@@ -96,6 +96,9 @@ Bugs in the packet handlers, each with a `regression_*` test in `src/test/`:
   allocation from the hero count in a w3route game result before checking it: a
   negative count aborted the daemon, and a count past the end of the packet
   leaked three allocations per packet.
+- `anongame_evaluate_results` (`src/bnetd/anongame.cpp`) indexed two 12-entry
+  tables on its stack with the player number byte of a w3route game result: a
+  player in a matched game could write outside them.
 
 ## Run it
 
