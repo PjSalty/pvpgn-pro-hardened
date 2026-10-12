@@ -18,7 +18,7 @@ tagged PvPGN-PRO release is from 2018.
 
 This fork does not rewrite that daemon. It hardens it:
 
-- brings the tree current with upstream `master` (2021), 102 commits past the
+- brings the tree current with upstream `master` (2026), 104 commits past the
   last tagged release,
 - compiles it with the full modern mitigation set and proves the mitigations are
   actually in the binary,
