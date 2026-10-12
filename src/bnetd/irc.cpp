@@ -739,10 +739,12 @@ namespace pvpgn
 										   break;
 
 									   if ((8 + std::strlen(text) + 1 + 1) <= MAX_IRC_MESSAGE_LEN) {
-										   std::sprintf(temp, ":\001ACTION %s\001", text);
+										   /* the guard omits the leading ':', so a text of exactly the
+										    * limit wrote one byte past temp; snprintf bounds it */
+										   std::snprintf(temp, sizeof(temp), ":\001ACTION %s\001", text);
 									   }
 									   else {
-										   std::sprintf(temp, ":\001ACTION (maximum message length exceeded)\001");
+										   std::snprintf(temp, sizeof(temp), ":\001ACTION (maximum message length exceeded)\001");
 									   }
 									   from.nick = conn_get_chatname(me);
 									   from.user = ctag;

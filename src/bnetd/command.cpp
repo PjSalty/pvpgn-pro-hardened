@@ -4693,7 +4693,7 @@ namespace pvpgn
 			if (strcasecmp(value, "null") == 0)
 				value = NULL;
 
-			std::sprintf(msgtemp0, " \"%.64s\" (%.128s = \"%.128s\")", account_get_name(account), key, value);
+			std::snprintf(msgtemp0, sizeof(msgtemp0), " \"%.64s\" (%.128s = \"%.128s\")", account_get_name(account), key, value);
 
 			if (account_set_strattr(account, key, value) < 0)
 			{

@@ -115,6 +115,21 @@ handlers that echo the field, such as the `count` of an anongame tournament or
 icon request, sent 4 of those bytes back per request. Fix: `packet_create` zeroes
 the packet.
 
+### 10. Two unbounded `sprintf` writes
+
+`_handle_set_command` (`src/bnetd/command.cpp`) formatted its confirmation with
+`sprintf` into a 255-byte buffer: the attacker-chosen key and value of a `/set`
+(up to 128 each, admin command group, reachable over bnet and the longer IRC and
+telnet command lines) overflowed it. The IRC emote path (`src/bnetd/irc.cpp`)
+guarded its `sprintf` with a length test that omitted the leading `:`, so a
+502-character emote, reachable by any user on the IRC listener, wrote one byte
+past a 512-byte stack buffer. Both now use `snprintf` with the real buffer size;
+anything that fit before is unchanged.
+
+The third site the build flags, `ipban.cpp`, is left as `sprintf`: its `%.48s`
+argument, `seconds_to_timestr`, is at most ~41 characters, so `"(...)"` cannot
+reach the 50-byte buffer, and the duration is set by an admin, not the network.
+
 ## What is not claimed
 
 The build hardening (`HARDENING.md`) is the primary defence for the rest of the
