@@ -29,8 +29,12 @@ for h in packet tag; do
 	done
 	if [ "$CAMPAIGN" -gt 0 ]; then
 		echo "== $h: ${CAMPAIGN}s campaign =="
+		# libFuzzer writes newly found inputs into its first corpus dir, so run
+		# against a scratch copy of the seeds, never the tracked fuzz/seeds tree.
+		corpus="$(mktemp -d)"
+		cp "$seeds"/*.bin "$corpus"/ 2>/dev/null || true
 		ASAN_OPTIONS=detect_leaks=0 "$bin" -max_total_time="$CAMPAIGN" -rss_limit_mb=2048 \
-			-print_final_stats=1 "$seeds" || { echo "campaign crash: $h"; status=1; }
+			-print_final_stats=1 "$corpus" || { echo "campaign crash: $h"; status=1; }
 	fi
 done
 
