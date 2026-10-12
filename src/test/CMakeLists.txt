@@ -36,3 +36,11 @@ endif()
 add_executable(regression_gameresult regression_gameresult.cc ../bnetd/anongame_gameresult.cpp)
 target_link_libraries(regression_gameresult PRIVATE common fmt)
 add_test(regression_gameresult regression_gameresult)
+
+# Guards the reject path of file_send: a request for a file that does not exist
+# must release the reply packet it created. Runs the real file_send with the
+# connection, prefs and i18n lookups stubbed and xmalloc/xfree defined by the
+# test, as above.
+add_executable(regression_file_send regression_file_send.cc ../bnetd/file.cpp)
+target_link_libraries(regression_file_send PRIVATE common fmt)
+add_test(regression_file_send regression_file_send)
