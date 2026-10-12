@@ -1141,6 +1141,12 @@ namespace pvpgn
 						number = gameresult_get_player_number(results, j) - 1;
 						result = gameresult_get_player_result(results, j);
 
+						/* the player number comes from the client and indexes
+						 * wins[] and losses[]: skip a result that is not about a
+						 * player of this game */
+						if (number < 0 || number >= ANONGAME_MAX_GAMECOUNT || number >= anongame_get_totalplayers(anongame))
+							continue;
+
 						if ((result == W3_GAMERESULT_WIN))
 							wins[number]++;
 						if ((result == W3_GAMERESULT_LOSS))

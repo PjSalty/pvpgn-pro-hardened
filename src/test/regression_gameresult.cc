@@ -1,5 +1,5 @@
-// regression_gameresult.cc - guards the hero block of anongame_gameresult_parse
-// (src/bnetd/anongame_gameresult.cpp).
+// regression_gameresult.cc - guards the w3route game result code in
+// src/bnetd/anongame_gameresult.cpp.
 //
 // A w3route game result carries heroes_used_count, a 32-bit int the client
 // picks, followed by that many hero records. The parser sized an xmalloc from
@@ -8,9 +8,16 @@
 // after it could wrap, and when it did reject the packet it returned NULL
 // without freeing the result, the player table or the hero table.
 //
-// This runs the real parser on real packets. xmalloc/xfree are defined here
-// instead of linking common/xalloc.cpp, so the test sees every request the
-// parser makes: one no packet could justify, or one it never gives back.
+// Every result entry also carries a player number, one client byte.
+// anongame_evaluate_results (src/bnetd/anongame.cpp) takes it from
+// gameresult_get_player_number and indexes two 12-entry tables on its stack
+// with it, minus one. The getter handed out any byte, so an entry for player 0
+// or 13 made the daemon write outside those tables.
+//
+// This runs the real parser and getters on real packets. xmalloc/xfree are
+// defined here instead of linking common/xalloc.cpp, so the test sees every
+// request the parser makes: one no packet could justify, or one it never gives
+// back. The evaluation itself needs a running game and is not run here.
 
 #include <climits>
 #include <cstdio>
@@ -155,6 +162,20 @@ static bool rejects(int announced, unsigned int present) {
 	return !r && !leaked;
 }
 
+// What gameresult_get_player_number hands out for the second entry of a
+// result that carries `byte` as that entry's player number.
+static int number_for(unsigned char byte) {
+	t_packet *packet = gameresult_packet(2, 0, 0);
+	packet->u.data[sizeof(t_client_w3route_gameresult) + sizeof(t_client_w3route_gameresult_player)] = (char)byte;
+	t_anongame_gameresult *r = anongame_gameresult_parse(packet);
+	int number = r ? gameresult_get_player_number(r, 1) : -2;
+
+	if (r)
+		gameresult_destroy(r);
+	packet_del_ref(packet);
+	return number;
+}
+
 int main() {
 	// the most heroes a 2 player result can carry in one packet
 	const unsigned int room = (MAX_PACKET_SIZE - (sizeof(t_client_w3route_gameresult) + 2 * sizeof(t_client_w3route_gameresult_player)
@@ -163,6 +184,21 @@ int main() {
 	check("results without heroes parse unchanged", parses(0, 0) && parses(1, 0) && parses(2, 0) && parses(8, 0));
 	check("results with heroes parse unchanged", parses(2, 1) && parses(2, 3) && parses(8, 12) && parses(1, 40));
 	check("a packet filled with heroes to the last byte parses unchanged", parses(2, room));
+
+	// player numbers: 1 to ANONGAME_MAX_GAMECOUNT are the ones a game can have
+	bool kept = true, refused = true;
+	for (unsigned int byte = 0; byte <= 255; byte++) {
+		int number = number_for((unsigned char)byte);
+		if (byte >= 1 && byte <= (unsigned int)ANONGAME_MAX_GAMECOUNT)
+			kept = kept && number == (int)byte;
+		else if (number != -1) {
+			if (refused)
+				std::printf("        player number byte %u was handed out as %d\n", byte, number);
+			refused = false;
+		}
+	}
+	check("every player number a game can have is handed out unchanged", kept);
+	check("a player number no game has is refused, not handed out as an index", refused);
 
 	// these reach the old size check and are refused by it, without the frees
 	check("one hero more than the packet holds is rejected and freed", rejects(3, 2));

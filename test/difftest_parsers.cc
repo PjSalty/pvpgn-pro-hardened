@@ -130,9 +130,11 @@ static void test_packets() {
 
 // ---- w3route game result parser: well-formed packets only -----------------
 // the hero count always matches the hero records present, or the packet is cut
-// short of its fixed parts (both builds refuse that before allocating). a hero
-// count the packet cannot hold is the out-of-contract case: pristine leaks or
-// aborts there, and src/test/regression_gameresult.cc covers it instead.
+// short of its fixed parts (both builds refuse that before allocating), and
+// every player number is one a game can have. a hero count the packet cannot
+// hold and a player number outside 1..ANONGAME_MAX_GAMECOUNT are the
+// out-of-contract cases: pristine leaks, aborts or hands out a wild index
+// there, and src/test/regression_gameresult.cc covers them instead.
 static void test_gameresults() {
 	using namespace pvpgn::bnetd;
 	for (int i = 0; i < 20000; i++) {
@@ -147,6 +149,9 @@ static void test_gameresults() {
 		p->ref = 1; p->pclass = packet_class_w3route;
 		for (unsigned j = 0; j < n; j++) p->u.data[j] = (char)rnd(); // every field random
 		bn_byte_set(&p->u.client_w3route_gameresult.number_of_results, players);
+		for (unsigned j = 0; j < players; j++)
+			p->u.data[sizeof(t_client_w3route_gameresult) + j * sizeof(t_client_w3route_gameresult_player)] =
+				(char)(1 + rnd() % ANONGAME_MAX_GAMECOUNT);
 		t_client_w3route_gameresult_part2 *part2 = (t_client_w3route_gameresult_part2 *)
 			(p->u.data + sizeof(t_client_w3route_gameresult) + players * sizeof(t_client_w3route_gameresult_player));
 		bn_int_set(&part2->heroes_used_count, heroes);

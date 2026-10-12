@@ -183,6 +183,14 @@ namespace pvpgn
 				return -1;
 			}
 
+			/* the number is a byte from the client and the caller indexes its
+			 * per-player tables with it: only hand out one a game can have */
+			if (gameresult->players[player].number < 1 || gameresult->players[player].number > ANONGAME_MAX_GAMECOUNT)
+			{
+				eventlog(eventlog_level_error, __FUNCTION__, "got result for invalid player number {}", (int)gameresult->players[player].number);
+				return -1;
+			}
+
 			return gameresult->players[player].number;
 		}
 

@@ -91,6 +91,14 @@ bytes and `xmalloc` aborted the daemon. The check that followed could wrap on a
 result, the player table or the hero table. Fix: bound the count by the bytes
 left in the packet, by division, before allocating, and free on that path.
 
+### 7. `anongame_evaluate_results` out-of-bounds stack write
+
+Every entry of a w3route game result names a player by number, one client byte.
+The evaluation indexed two 12-entry vote tables on its stack with it, minus one,
+unchecked: a player in a matched game could increment stack memory outside them,
+once per entry. Fix: `gameresult_get_player_number` only hands out 1 to 12, and
+the evaluation skips an entry that is not about a player of the game.
+
 ## What is not claimed
 
 The build hardening (`HARDENING.md`) is the primary defence for the rest of the
