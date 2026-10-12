@@ -12,3 +12,10 @@ add_test(bigint bigint)
 add_executable(regression_fmt_lifetime regression_fmt_lifetime.cc)
 target_link_libraries(regression_fmt_lifetime PRIVATE fmt)
 add_test(regression_fmt_lifetime regression_fmt_lifetime)
+
+# Guards the item bound of the anongame INFOREQ handler: the item count is a
+# client byte and has to be checked against the packet size before the items
+# are read. Run under sanitizers via test/run-handler-regression.sh as well.
+add_executable(regression_anongame_inforeq regression_anongame_inforeq.cc)
+target_link_libraries(regression_anongame_inforeq PRIVATE common fmt)
+add_test(regression_anongame_inforeq regression_anongame_inforeq)
