@@ -52,6 +52,11 @@ int main() {
 	bool zero = true;
 	for (unsigned int i = 0; i < sizeof(classes) / sizeof(classes[0]); i++) {
 		t_packet *packet = packet_create(classes[i]);
+		if (!packet) {
+			std::printf("        no packet for class %d\n", (int)classes[i]);
+			zero = false;
+			continue;
+		}
 		for (unsigned int pos = 0; pos < sizeof(packet->u.data); pos++) {
 			if (packet->u.data[pos] != 0) {
 				if (zero)
@@ -69,6 +74,10 @@ int main() {
 	// what a handler sees when it reads a field the client did not send:
 	// 5 bytes on the wire are the header and the option, the count comes after
 	t_packet *packet = packet_create(packet_class_bnet);
+	if (!packet) {
+		std::printf("PACKET CREATE REGRESSION: FAIL (no packet)\n");
+		return 1;
+	}
 	packet_set_size(packet, sizeof(t_bnet_header) + 1);
 	unsigned int count = bn_int_get(packet->u.client_anongame_tournament_request.count);
 	if (count)

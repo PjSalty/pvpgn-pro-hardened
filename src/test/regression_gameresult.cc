@@ -69,6 +69,10 @@ static void check(const char *what, bool ok) {
 // announces `announced` heroes. Every field gets a value the checks can predict.
 static t_packet *gameresult_packet(unsigned int players, int announced, unsigned int present) {
 	t_packet *packet = packet_create(packet_class_w3route);
+	if (!packet) {
+		std::printf("GAMERESULT REGRESSION: FAIL (no packet)\n");
+		std::exit(1);
+	}
 	packet_set_size(packet, sizeof(t_client_w3route_gameresult));
 	packet_set_type(packet, CLIENT_W3ROUTE_GAMERESULT_W3XP);
 	bn_byte_set(&packet->u.client_w3route_gameresult.number_of_results, players);
