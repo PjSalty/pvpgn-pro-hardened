@@ -3,7 +3,10 @@
 The mitigations are wired in `cmake/Modules/Hardening.cmake`, enabled by default
 (`-D PVPGN_HARDENING=ON`), and applied to every target. Each compiler flag is
 probed with `check_cxx_compiler_flag`, so the build stays portable across GCC and
-Clang and silently skips a flag the toolchain does not accept.
+Clang and silently skips a flag the toolchain does not accept. The three format
+flags are probed as one group: GCC rejects `-Werror=format-security` unless
+`-Wformat` is already on, so probed alone it was skipped by every GCC that does
+not enable `-Wformat` by default, Debian's included.
 
 ## Flag set
 
@@ -32,6 +35,10 @@ Linker:
 -Wl,-z,noexecstack
 -Wl,-z,ibt -Wl,-z,shstk           force the x86 CET property note (see below)
 ```
+
+`-Werror=format-security` leaves nothing in the binary for `test/checksec.sh` to
+find. Check it at configure time (`PVPGN_HAVE_FORMAT_SECURITY - Success`) or on
+the compile line (`cmake --build build -- VERBOSE=1`).
 
 ## The CET note
 
