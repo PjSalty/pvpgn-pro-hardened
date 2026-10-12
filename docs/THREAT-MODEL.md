@@ -99,6 +99,13 @@ unchecked: a player in a matched game could increment stack memory outside them,
 once per entry. Fix: `gameresult_get_player_number` only hands out 1 to 12, and
 the evaluation skips an entry that is not about a player of the game.
 
+### 8. `file_send` packet leak
+
+`file_send` creates its reply packet before it looks the file up, and returned
+without releasing it when the lookup failed: about 3 KB leaked for every request
+naming a file that does not exist, on a connection that needs no login and can
+repeat the request. Fix: release the packet on that path.
+
 ## What is not claimed
 
 The build hardening (`HARDENING.md`) is the primary defence for the rest of the

@@ -224,6 +224,7 @@ namespace pvpgn
 			catch (const std::runtime_error& e)
 			{
 				eventlog(eventlog_level_error, __FUNCTION__, "{}", e.what());
+				packet_del_ref(rpacket);
 				return -1;
 			}
 

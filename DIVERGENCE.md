@@ -26,6 +26,7 @@ offered upstream, and once merged they drop out of this list.
 | `src/bnetd/handle_file.cpp` | raw-mode filename read: read one byte less than the buffer so the name handed to `file_send` stays NUL terminated, and reject the request when the read returns nothing or fails instead of calling `file_send` anyway. |
 | `src/bnetd/anongame_gameresult.cpp` | `anongame_gameresult_parse`: check the client's `heroes_used_count` against the bytes left in the packet, by division so it cannot wrap, before it sizes the hero allocation, and free the result on that reject path. A negative count used to reach `xmalloc` first and abort the daemon; a count past the end of the packet leaked three allocations. |
 | `src/bnetd/anongame.cpp` | `anongame_evaluate_results`: skip a result entry that is not about a player of the game. Its player number is a client byte and indexed the 12-entry `wins`/`losses` tables on the stack unchecked. `gameresult_get_player_number` (`anongame_gameresult.cpp`) now returns -1 for a number outside 1 to `ANONGAME_MAX_GAMECOUNT`. |
+| `src/bnetd/file.cpp` | `file_send`: release the reply packet when the file lookup throws. A request for a missing file, or a name with a path separator, leaked one packet. |
 | `CMakeLists.txt` | move `enable_testing()` before `add_subdirectory(src)` so the unit tests actually build; include the hardening module. |
 
 The parser fixes are proved to produce identical output to the pristine code for

@@ -34,7 +34,9 @@ run() { # $1=test name, rest=the bnetd sources it drives
 
 run regression_anongame_inforeq
 run regression_handle_file handle_file.cpp
-# defines xmalloc/xfree itself, so it is built without common/xalloc.cpp
+# these define xmalloc/xfree themselves, so no common/xalloc.cpp from here on
 COMMON=(packet bn_type eventlog hexdump)
 run regression_gameresult anongame_gameresult.cpp
+COMMON+=(tag bnettime)
+run regression_file_send file.cpp
 echo "HANDLER REGRESSION: PASS"

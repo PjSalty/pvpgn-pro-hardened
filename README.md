@@ -99,6 +99,8 @@ Bugs in the packet handlers, each with a `regression_*` test in `src/test/`:
 - `anongame_evaluate_results` (`src/bnetd/anongame.cpp`) indexed two 12-entry
   tables on its stack with the player number byte of a w3route game result: a
   player in a matched game could write outside them.
+- `file_send` (`src/bnetd/file.cpp`) leaked its reply packet, about 3 KB, for
+  every request naming a file that does not exist. Reachable before login.
 
 ## Run it
 
