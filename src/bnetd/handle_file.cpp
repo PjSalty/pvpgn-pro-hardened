@@ -105,8 +105,18 @@ namespace pvpgn
 				case CLIENT_FILE_REQ3:
 				{
 					char rawname[MAX_FILENAME_STR] = {};
+					int rawlen;
 
-					psock_recv(conn_get_socket(c), rawname, MAX_FILENAME_STR, 0);
+					/* a read that fills the whole buffer would leave the name
+					 * without its terminating NUL */
+					rawlen = psock_recv(conn_get_socket(c), rawname, sizeof(rawname) - 1, 0);
+					if (rawlen < 1)
+					{
+						eventlog(eventlog_level_error, __FUNCTION__, "[{}] got bad FILE_REQ3 (missing filename)", conn_get_socket(c));
+						return -1;
+					}
+					rawname[rawlen] = '\0';
+
 					file_send(c, rawname, 0, 0, 0, 1);
 				}
 					break;

@@ -19,3 +19,12 @@ add_test(regression_fmt_lifetime regression_fmt_lifetime)
 add_executable(regression_anongame_inforeq regression_anongame_inforeq.cc)
 target_link_libraries(regression_anongame_inforeq PRIVATE common fmt)
 add_test(regression_anongame_inforeq regression_anongame_inforeq)
+
+# Guards the raw-mode filename read of the file handler: the name read off the
+# socket has to stay NUL terminated, and a failed read must not reach
+# file_send(). Runs the real handler over a socketpair, hence UNIX only.
+if(UNIX)
+	add_executable(regression_handle_file regression_handle_file.cc ../bnetd/handle_file.cpp)
+	target_link_libraries(regression_handle_file PRIVATE common fmt)
+	add_test(regression_handle_file regression_handle_file)
+endif()

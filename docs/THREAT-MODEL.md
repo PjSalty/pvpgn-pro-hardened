@@ -72,6 +72,15 @@ checking the packet held them, and passed the result, NULL past the end of the
 packet, to `memcpy`. Any logged-in client could crash the daemon with one short
 packet. Fix: reject a packet shorter than its header plus the announced entries.
 
+### 5. Unterminated filename in the raw file request
+
+A file connection in raw mode has its filename read straight off the socket into
+a `MAX_FILENAME_STR` stack buffer and handed to `file_send`. The read could fill
+the whole buffer, leaving no terminator for the string functions behind it, and
+its result was ignored, so a failed read still ran `file_send`. Reachable before
+login. Fix: read one byte less than the buffer, and reject the request when the
+read returns nothing or fails.
+
 ## What is not claimed
 
 The build hardening (`HARDENING.md`) is the primary defence for the rest of the
