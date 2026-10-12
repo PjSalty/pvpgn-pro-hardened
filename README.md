@@ -101,6 +101,9 @@ Bugs in the packet handlers, each with a `regression_*` test in `src/test/`:
   player in a matched game could write outside them.
 - `file_send` (`src/bnetd/file.cpp`) leaked its reply packet, about 3 KB, for
   every request naming a file that does not exist. Reachable before login.
+- `packet_create` (`src/common/packet.cpp`) left the packet buffer uninitialised,
+  so a handler reading a field past the end of a short packet echoed old heap
+  bytes to the client.
 
 ## Run it
 

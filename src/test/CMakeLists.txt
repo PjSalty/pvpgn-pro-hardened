@@ -44,3 +44,10 @@ add_test(regression_gameresult regression_gameresult)
 add_executable(regression_file_send regression_file_send.cc ../bnetd/file.cpp)
 target_link_libraries(regression_file_send PRIVATE common fmt)
 add_test(regression_file_send regression_file_send)
+
+# Guards the zeroing in packet_create: a handler that reads a field past the
+# end of a short packet must find zeros, not old heap contents. xmalloc is
+# defined by the test and returns pattern-filled memory.
+add_executable(regression_packet_create regression_packet_create.cc)
+target_link_libraries(regression_packet_create PRIVATE common fmt)
+add_test(regression_packet_create regression_packet_create)

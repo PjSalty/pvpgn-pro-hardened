@@ -53,6 +53,9 @@ namespace pvpgn
 		}
 
 		temp = (t_packet*)xmalloc(sizeof(t_packet));
+		/* a handler that reads a field past the bytes a short packet really
+		   carries has to find zeros there, not what the heap held before */
+		std::memset(temp, 0, sizeof(t_packet));
 		temp->ref = 1;
 		temp->pclass = pclass;
 		temp->flags = 0;

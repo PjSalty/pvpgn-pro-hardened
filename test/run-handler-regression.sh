@@ -37,6 +37,7 @@ run regression_handle_file handle_file.cpp
 # these define xmalloc/xfree themselves, so no common/xalloc.cpp from here on
 COMMON=(packet bn_type eventlog hexdump)
 run regression_gameresult anongame_gameresult.cpp
+run regression_packet_create
 COMMON+=(tag bnettime)
 run regression_file_send file.cpp
 echo "HANDLER REGRESSION: PASS"

@@ -18,6 +18,7 @@ offered upstream, and once merged they drop out of this list.
 |---|---|
 | `src/common/packet.cpp` | `packet_get_str_const`: bound the NUL scan by the declared size before dereferencing, fixing a one-byte over-read. |
 | `src/common/packet.cpp` | `packet_get_data_const`: overflow-safe `offset + len` check. |
+| `src/common/packet.cpp` | `packet_create`: zero the packet, so a handler that reads a field past the end of a short packet finds zeros instead of old heap contents. |
 | `src/common/tag.cpp` | `tag_str_to_uint`: stop at the NUL terminator, and drop the signed-char shift UB. |
 | `src/common/tag.cpp` | `tag_case_str_to_uint`: zero-initialise the scratch buffer. |
 | `src/bnetd/i18n.h` | `_localize`: hold the caller's `fmt::string_view` instead of `fmt::to_string(...).c_str()`, whose temporary died at the end of the statement and left `fmt::format` parsing freed heap memory on every localized message. |

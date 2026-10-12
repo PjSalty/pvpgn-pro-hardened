@@ -106,6 +106,15 @@ without releasing it when the lookup failed: about 3 KB leaked for every request
 naming a file that does not exist, on a connection that needs no login and can
 repeat the request. Fix: release the packet on that path.
 
+### 9. Stale heap bytes behind a short packet
+
+`packet_create` did not initialise the 3072-byte packet buffer, and many handlers
+read a fixed field without checking the packet is long enough to hold it. For a
+short packet that read returned what an earlier packet had left on the heap, and
+handlers that echo the field, such as the `count` of an anongame tournament or
+icon request, sent 4 of those bytes back per request. Fix: `packet_create` zeroes
+the packet.
+
 ## What is not claimed
 
 The build hardening (`HARDENING.md`) is the primary defence for the rest of the
