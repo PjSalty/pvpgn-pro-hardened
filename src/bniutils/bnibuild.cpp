@@ -61,7 +61,8 @@ namespace
 			char cmd[BUFSIZE];
 			/* A blank or whitespace-only line has no token; skip it rather than
 			   compare an unset buffer. */
-			if (std::sscanf(line, "%s", cmd) != 1)
+			/* 1023 = BUFSIZE - 1: the width keeps the token inside cmd. */
+			if (std::sscanf(line, "%1023s", cmd) != 1)
 				continue;
 			if (std::strcmp(cmd, "unknown1") == 0) {
 				std::sscanf(line, "unknown1 %08x", &bnifile->unknown1);
