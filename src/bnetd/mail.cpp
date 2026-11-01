@@ -384,7 +384,9 @@ namespace pvpgn
 					ostr << std::setfill('0') << std::setw(2) << std::right << (it - mlist.begin()) << "    "
 						<< std::setfill(' ') << std::setw(14) << std::left << it->sender() << ' ';
 					char buff[128];
-					std::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", std::localtime(&it->timestamp()));
+					const std::tm * tmstamp = std::localtime(&(*it).timestamp());
+					if (!tmstamp || !std::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", tmstamp))
+						std::snprintf(buff, sizeof(buff), "?");
 					ostr << buff;
 					message_send_text(c, message_type_info, c, ostr.str().c_str());
 				}
@@ -404,7 +406,9 @@ namespace pvpgn
 					std::ostringstream ostr;
 					ostr << "Message #" << idx << " from " << mail.sender() << " on ";
 					char buff[128];
-					std::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", std::localtime(&mail.timestamp()));
+					const std::tm * tmstamp = std::localtime(&mail.timestamp());
+					if (!tmstamp || !std::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", tmstamp))
+						std::snprintf(buff, sizeof(buff), "?");
 					ostr << buff << ':';
 					message_send_text(c, message_type_info, c, ostr.str().c_str());
 					message_send_text(c, message_type_info, c, mail.message().c_str());
