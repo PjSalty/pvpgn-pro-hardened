@@ -19,6 +19,7 @@
 #include "setup.h"
 #include "dbspacket.h"
 
+#include <cstdarg>
 #include <cstdio>
 #include <cerrno>
 #include <cstring>
@@ -71,6 +72,21 @@ namespace pvpgn
 		static int dbs_packet_fix_charinfo(t_d2dbs_connection * conn, char * AccountName, char * CharName, char * charsave);
 		static void dbs_packet_set_charinfo_level(char * CharName, char * charinfo);
 
+		/* Format a path into buf; false when it does not fit. */
+		static bool dbs_format_path(char * buf, std::size_t size, const char * fmt, ...)
+		{
+			va_list ap;
+
+			va_start(ap, fmt);
+			int n = std::vsnprintf(buf, size, fmt, ap);
+			va_end(ap);
+			if (n < 0 || static_cast<std::size_t>(n) >= size) {
+				eventlog(eventlog_level_error, __FUNCTION__, "path too long, refusing to use it");
+				return false;
+			}
+			return true;
+		}
+
 		static unsigned int dbs_packet_savedata_charsave(t_d2dbs_connection* conn, char * AccountName, char * CharName, char * data, unsigned int datalen)
 		{
 			char filename[MAX_PATH];
@@ -94,7 +110,10 @@ namespace pvpgn
 			}
 
 
-			std::sprintf(filename, "%s/.%s.tmp", d2dbs_prefs_get_charsave_dir(), CharName);
+			if (!dbs_format_path(filename, sizeof(filename), "%s/.%s.tmp", d2dbs_prefs_get_charsave_dir(), CharName) ||
+				!dbs_format_path(bakfile, sizeof(bakfile), "%s/%s", prefs_get_charsave_bak_dir(), CharName) ||
+				!dbs_format_path(savefile, sizeof(savefile), "%s/%s", d2dbs_prefs_get_charsave_dir(), CharName))
+				return 0;
 			fd = std::fopen(filename, "wb");
 			if (!fd) {
 				eventlog(eventlog_level_error, __FUNCTION__, "open() failed : {}", filename);
@@ -118,8 +137,6 @@ namespace pvpgn
 			}
 			std::fclose(fd);
 
-			std::sprintf(bakfile, "%s/%s", prefs_get_charsave_bak_dir(), CharName);
-			std::sprintf(savefile, "%s/%s", d2dbs_prefs_get_charsave_dir(), CharName);
 			if (p_rename(savefile, bakfile) == -1) {
 				eventlog(eventlog_level_warn, __FUNCTION__, "error std::rename {} to {}", savefile, bakfile);
 			}
@@ -143,13 +160,16 @@ namespace pvpgn
 			strtolower(AccountName);
 			strtolower(CharName);
 
-			std::sprintf(filepath, "%s/%s", prefs_get_charinfo_bak_dir(), AccountName);
+			if (!dbs_format_path(filepath, sizeof(filepath), "%s/%s", prefs_get_charinfo_bak_dir(), AccountName) ||
+				!dbs_format_path(filename, sizeof(filename), "%s/%s/.%s.tmp", d2dbs_prefs_get_charinfo_dir(), AccountName, CharName) ||
+				!dbs_format_path(bakfile, sizeof(bakfile), "%s/%s/%s", prefs_get_charinfo_bak_dir(), AccountName, CharName) ||
+				!dbs_format_path(savefile, sizeof(savefile), "%s/%s/%s", d2dbs_prefs_get_charinfo_dir(), AccountName, CharName))
+				return 0;
 			if (stat(filepath, &statbuf) == -1) {
 				p_mkdir(filepath, S_IRWXU | S_IRWXG | S_IRWXO);
 				eventlog(eventlog_level_info, __FUNCTION__, "created charinfo directory: {}", filepath);
 			}
 
-			std::sprintf(filename, "%s/%s/.%s.tmp", d2dbs_prefs_get_charinfo_dir(), AccountName, CharName);
 			fd = std::fopen(filename, "wb");
 			if (!fd) {
 				eventlog(eventlog_level_error, __FUNCTION__, "open() failed : {}", filename);
@@ -173,8 +193,6 @@ namespace pvpgn
 			}
 			std::fclose(fd);
 
-			std::sprintf(bakfile, "%s/%s/%s", prefs_get_charinfo_bak_dir(), AccountName, CharName);
-			std::sprintf(savefile, "%s/%s/%s", d2dbs_prefs_get_charinfo_dir(), AccountName, CharName);
 			if (p_rename(savefile, bakfile) == -1) {
 				eventlog(eventlog_level_info, __FUNCTION__, "error std::rename {} to {}", savefile, bakfile);
 			}
@@ -195,8 +213,9 @@ namespace pvpgn
 			strtolower(AccountName);
 			strtolower(CharName);
 
-			std::sprintf(filename, "%s/%s", d2dbs_prefs_get_charsave_dir(), CharName);
-			std::sprintf(filename_d2closed, "%s/%s.d2s", d2dbs_prefs_get_charsave_dir(), CharName);
+			if (!dbs_format_path(filename, sizeof(filename), "%s/%s", d2dbs_prefs_get_charsave_dir(), CharName) ||
+				!dbs_format_path(filename_d2closed, sizeof(filename_d2closed), "%s/%s.d2s", d2dbs_prefs_get_charsave_dir(), CharName))
+				return 0;
 			if ((access(filename, F_OK) < 0) && (access(filename_d2closed, F_OK) == 0))
 			{
 				std::rename(filename_d2closed, filename);
@@ -250,7 +269,8 @@ namespace pvpgn
 			strtolower(AccountName);
 			strtolower(CharName);
 
-			std::sprintf(filename, "%s/%s/%s", d2dbs_prefs_get_charinfo_dir(), AccountName, CharName);
+			if (!dbs_format_path(filename, sizeof(filename), "%s/%s/%s", d2dbs_prefs_get_charinfo_dir(), AccountName, CharName))
+				return 0;
 			fd = std::fopen(filename, "rb");
 			if (!fd) {
 				eventlog(eventlog_level_error, __FUNCTION__, "open() failed : {}", filename);
@@ -555,7 +575,7 @@ namespace pvpgn
 				return -1;
 			}
 
-			std::strcpy(charladderinfo.charname, CharName);
+			std::snprintf(charladderinfo.charname, sizeof(charladderinfo.charname), "%s", CharName);
 			charladderinfo.experience = bn_int_get(updateladder->charexplow);
 			charladderinfo.level = bn_int_get(updateladder->charlevel);
 			charladderinfo.status = bn_short_get(updateladder->charstatus);
