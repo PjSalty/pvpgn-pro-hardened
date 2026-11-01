@@ -165,8 +165,6 @@ namespace pvpgn
 
 			temptime = server_get_starttime(); /* FIXME: This should be build time */
 			temptimestr = std::ctime(&temptime);
-			if (!temptimestr)
-				temptimestr = "?\n";
 			if ((25 + std::strlen(temptimestr) + 1) <= MAX_IRC_MESSAGE_LEN)
 				std::sprintf(temp, ":This server was created %s", temptimestr); /* FIXME: is ctime() portable? */
 			else
