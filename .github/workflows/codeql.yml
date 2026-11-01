@@ -47,6 +47,60 @@ jobs:
           cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D CMAKE_POLICY_VERSION_MINIMUM=3.5 -D WITH_LUA=true
           cmake --build build -j "$(nproc)"
 
+      # Analyze without uploading so the vendored nlohmann json header can be
+      # dropped from the results before they reach code scanning.
       - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         with:
+          category: "/language:c-cpp"
+          upload: never
+          output: sarif-results
+
+      - name: Drop results in the vendored json header
+        run: |
+          python3 -I - sarif-results src/json/json.hpp <<'PY'
+          import glob, json, os, sys
+          from urllib.parse import unquote
+
+          sarif_dir, vendored = sys.argv[1], sys.argv[2]
+          workspace = os.environ.get("GITHUB_WORKSPACE", "").rstrip("/") + "/"
+
+
+          def rel(uri):
+              uri = unquote(uri)
+              if uri.startswith("file://"):
+                  uri = uri[len("file://"):]
+              if workspace != "/" and uri.startswith(workspace):
+                  uri = uri[len(workspace):]
+              while uri.startswith("./"):
+                  uri = uri[2:]
+              return uri
+
+
+          def primary(result):
+              try:
+                  return rel(result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"])
+              except (KeyError, IndexError, TypeError):
+                  return None
+
+
+          files = sorted(glob.glob(os.path.join(sarif_dir, "*.sarif")))
+          if not files:
+              sys.exit("no SARIF files in " + sarif_dir)
+          for path in files:
+              with open(path) as fh:
+                  log = json.load(fh)
+              kept = dropped = 0
+              for run in log.get("runs", []):
+                  results = run.get("results", [])
+                  run["results"] = [r for r in results if primary(r) != vendored]
+                  kept += len(run["results"])
+                  dropped += len(results) - len(run["results"])
+              with open(path, "w") as fh:
+                  json.dump(log, fh)
+              print(f"{path}: kept {kept}, dropped {dropped}")
+          PY
+
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: sarif-results
           category: "/language:c-cpp"
