@@ -692,9 +692,9 @@ namespace pvpgn
 				}
 				counter++;
 				if (entry->endtime == 0)
-					std::sprintf(timestr, "%s", localize(c, "(perm)").c_str());
+					std::snprintf(timestr, sizeof(timestr), "%s", localize(c, "(perm)").c_str());
 				else
-					std::sprintf(timestr, "(%.48s)", seconds_to_timestr(entry->endtime - now));
+					std::snprintf(timestr, sizeof(timestr), "(%.47s)", seconds_to_timestr(entry->endtime - now));
 
 				if (!(ipstr = ipban_entry_to_str(entry)))
 				{

@@ -187,7 +187,7 @@ namespace pvpgn
 				if (!(tmnow = std::localtime(&now)))
 					dstr[0] = '\0';
 				else
-					std::sprintf(dstr, "%04d%02d%02d%02d%02d%02d",
+					std::snprintf(dstr, sizeof(dstr), "%04d%02d%02d%02d%02d%02d",
 					1900 + tmnow->tm_year,
 					tmnow->tm_mon + 1,
 					tmnow->tm_mday,

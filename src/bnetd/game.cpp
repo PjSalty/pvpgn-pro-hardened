@@ -959,7 +959,7 @@ namespace pvpgn
 				if (!(tmval = std::localtime(&now)))
 					dstr[0] = '\0';
 				else
-					std::sprintf(dstr, "%04d%02d%02d%02d%02d%02d",
+					std::snprintf(dstr, sizeof(dstr), "%04d%02d%02d%02d%02d%02d",
 					1900 + tmval->tm_year,
 					tmval->tm_mon + 1,
 					tmval->tm_mday,
