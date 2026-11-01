@@ -151,8 +151,8 @@ namespace pvpgn
 
 			tempname = conn_get_loggeduser(conn);
 
-			if ((34 + std::strlen(tempname) + 1) <= MAX_IRC_MESSAGE_LEN)
-				std::sprintf(temp, ":Welcome to the %s IRC Network %s", prefs_get_irc_network_name(), tempname);
+			if ((34 + std::strlen(prefs_get_irc_network_name()) + std::strlen(tempname) + 1) <= MAX_IRC_MESSAGE_LEN)
+				std::snprintf(temp, sizeof(temp), ":Welcome to the %s IRC Network %s", prefs_get_irc_network_name(), tempname);
 			else
 				std::sprintf(temp, ":Maximum length exceeded");
 			irc_send(conn, RPL_WELCOME, temp);
@@ -166,7 +166,7 @@ namespace pvpgn
 			temptime = server_get_starttime(); /* FIXME: This should be build time */
 			temptimestr = std::ctime(&temptime);
 			if ((25 + std::strlen(temptimestr) + 1) <= MAX_IRC_MESSAGE_LEN)
-				std::sprintf(temp, ":This server was created %s", temptimestr); /* FIXME: is ctime() portable? */
+				std::snprintf(temp, sizeof(temp), ":This server was created %s", temptimestr); /* FIXME: is ctime() portable? */
 			else
 				std::sprintf(temp, ":Maximum length exceeded");
 			irc_send(conn, RPL_CREATED, temp);
@@ -178,7 +178,7 @@ namespace pvpgn
 				std::sprintf(temp, ":Maximum length exceeded");
 			irc_send(conn, RPL_MYINFO, temp);
 
-			std::sprintf(temp, "NICKLEN=%d TOPICLEN=%d CHANNELLEN=%d PREFIX=%s CHANTYPES=" CHANNEL_TYPE " NETWORK=%s IRCD=" PVPGN_SOFTWARE,
+			std::snprintf(temp, sizeof(temp), "NICKLEN=%d TOPICLEN=%d CHANNELLEN=%d PREFIX=%s CHANTYPES=" CHANNEL_TYPE " NETWORK=%s IRCD=" PVPGN_SOFTWARE,
 				MAX_CHARNAME_LEN, MAX_TOPIC_LEN, MAX_CHANNELNAME_LEN, CHANNEL_PREFIX, prefs_get_irc_network_name());
 
 			irc_send(conn, RPL_ISUPPORT, temp);
