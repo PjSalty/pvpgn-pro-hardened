@@ -86,7 +86,7 @@ namespace pvpgn
 	{
 		static char verstr[16];
 
-		std::sprintf(verstr, "%lu.%lu.%lu.%lu",
+		std::snprintf(verstr, sizeof(verstr), "%lu.%lu.%lu.%lu",
 			(vernum >> 24),
 			(vernum >> 16) & 0xff,
 			(vernum >> 8) & 0xff,

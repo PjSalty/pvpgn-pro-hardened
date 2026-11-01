@@ -59,7 +59,11 @@ namespace
 		bnifile->icons = (struct bni_iconlist_struct*)xmalloc(1); /* some xrealloc()s are broken */
 		while (std::fgets(line, sizeof(line), f)) {
 			char cmd[BUFSIZE];
-			std::sscanf(line, "%s", cmd);
+			/* A blank or whitespace-only line has no token; skip it rather than
+			   compare an unset buffer. */
+			/* 1023 = BUFSIZE - 1: the width keeps the token inside cmd. */
+			if (std::sscanf(line, "%1023s", cmd) != 1)
+				continue;
 			if (std::strcmp(cmd, "unknown1") == 0) {
 				std::sscanf(line, "unknown1 %08x", &bnifile->unknown1);
 			}

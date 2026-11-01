@@ -504,7 +504,7 @@ namespace pvpgn
 				else
 				{
 					account_get_raceicon(acc, &rico, &rlvl, &rwins, clienttag);
-					std::sprintf(user_icon, "%1d%c3W", rlvl, rico);
+					std::snprintf(user_icon, sizeof(user_icon), "%1d%c3W", rlvl, rico);
 					std::memcpy(&rpacket->u.server_findanongame_iconreply.curricon, user_icon, 4);
 				}
 
